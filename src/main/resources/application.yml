@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: TodoPro
+  datasource:
+    url: jdbc:mysql://175.24.205.213:3306/todoai?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC
+    username: username
+    password: lmjnb666
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY_PROXY}
+      base-url: https://hk.xty.app
+      image:
+        api-key: ${OPENAI_API_KEY_PROXY}
+        base-url: https://hk.xty.app
+      audio:
+        speech:
+          api-key: ${OPENAI_API_KEY_PROXY}
+          base-url: https://hk.xty.app
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      enabled: true
+      max-request-size: 100MB
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+server:
+  port: 8092
