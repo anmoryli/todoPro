@@ -1,7 +1,9 @@
 drop table if exists ai;
 drop table if exists todo;
+drop table if exists wall_paper;
 drop table if exists overall;
 drop table if exists day;
+drop table if exists ai_overview;
 drop table if exists user;
 
 create table if not exists user (
@@ -9,6 +11,7 @@ create table if not exists user (
     username varchar(50) not null unique,
     password varchar(255) not null,
     email varchar(100) unique,
+    wall_paper_path varchar(1024), # 用于存储用户的壁纸路径
     created_at datetime not null default current_timestamp,
     updated_at datetime not null default current_timestamp on update current_timestamp
 );
@@ -73,4 +76,11 @@ create table if not exists ai_overview (
     created_at datetime not null default current_timestamp,
     updated_at datetime not null default current_timestamp on update current_timestamp,
     foreign key (user_id) references user(user_id) on delete cascade
+);
+
+create table if not exists prompt (
+    prompt_id int not null auto_increment primary key,
+    content text not null,
+    created_at datetime not null default current_timestamp,
+    updated_at datetime not null default current_timestamp on update current_timestamp
 );

@@ -1,10 +1,7 @@
 package com.anmory.todopro.controller;
 
 import com.anmory.todopro.dto.TodoItem;
-import com.anmory.todopro.model.Ai;
-import com.anmory.todopro.model.AiOverview;
-import com.anmory.todopro.model.Overall;
-import com.anmory.todopro.model.Todo;
+import com.anmory.todopro.model.*;
 import com.anmory.todopro.service.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +9,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -44,22 +46,88 @@ public class AiController {
             log.error("未找到用户 {} 的总体任务", userId);
             return false;
         }
-        // 先把day表增加一个记录，代表下一天
-        int dayId = dayService.insert(userId, "新的一天", "暂无今日总结");
-        // 获取昨天的todo
-        List<Todo> todos = todoService.selectByDayId(dayId - 1);
-        if(todos.isEmpty()) {
-            log.error("未找到昨天的待办事项");
-            return false;
+
+        // 获取当前日期（只取年月日）
+        LocalDate currentDate = LocalDate.now();
+
+        // 获取用户最后一条day记录
+        Day lastDay = dayService.selectLast();
+        LocalDate lastDayDate = null;
+
+        if (lastDay != null) {
+            // 将Day对象中的日期字段转换为LocalDate（假设Day类中有Date类型字段createAt）
+            lastDayDate = convertToLocalDate(lastDay.getCreatedAt());
         }
+
+        Integer dayId = null;
+
+        log.info("比较当前日期 {} 和最后一条day记录日期 {}", currentDate, lastDayDate);
+        // 判断是否需要创建新的day记录
+        if (lastDayDate == null || !lastDayDate.isEqual(currentDate)) {
+            // 需要创建新的day记录
+            String title = "新的一天";
+            String overview = "暂无今日总结";
+            dayService.insert(userId, title, overview);
+            int newDayId = dayService.selectLast().getDayId();
+
+            if (newDayId <= 0) {
+                log.error("创建新的day记录失败，用户ID: {}", userId);
+                return false;
+            }
+
+            dayId = newDayId;
+            log.info("为用户 {} 创建了新的day记录，ID: {}", userId, dayId);
+        } else {
+            // 使用已有的day记录
+            dayId = lastDay.getDayId();
+            log.info("使用用户 {} 已有的day记录，ID: {}", userId, dayId);
+        }
+
+        // 获取前一天的dayId（如果存在）
+        Integer previousDayId = null;
+        if (lastDay != null && !lastDayDate.isEqual(currentDate)) {
+            previousDayId = lastDay.getDayId();
+        }
+
+        // 获取前一天的todo
+        List<Todo> todos;
+        if (previousDayId != null) {
+            todos = todoService.selectByDayIdAndUserId(previousDayId, userId);
+            System.out.println("前一天的待办事项: " + todos + ", 前一天的dayId: " + previousDayId +
+                    ", 当前用户ID: " + userId);
+        } else {
+            todos = Collections.emptyList();
+        }
+
+        if(todos.isEmpty()) {
+            log.info("未找到前一天的待办事项，使用默认待办");
+            // 如果为空，创建一个默认的待办事项
+            Todo todo = new Todo();
+            todo.setTitle("暂无待办事项");
+            todo.setDescription("今日无历史待办事项，开始新的一天");
+            todo.setUserId(userId);
+            todos = Collections.singletonList(todo);
+        }
+
         // 生成下一天的todo，结构化输出
-        String aiTodos = toolService.todoGenerate(overall.toString(),
+        String aiTodos = toolService.todoGenerate(
                 todos.toString(),
+                overall.toString(),
                 String.valueOf(userId));
+        System.out.println("AI生成的待办事项: " + aiTodos);
+
         // 解析todo成list
         List<TodoItem> todoItems = toolService.parseTodoList(aiTodos);
+        System.out.println("解析后的待办事项: " + todoItems);
+
+        if (todoItems.isEmpty()) {
+            log.error("AI生成的待办事项解析失败，返回空列表");
+            return false;
+        }
+
         // 插入ai表
-        aiService.insert(overall.getOverallId(), userId, todoItems.toString(), aiTodos);
+        aiService.insert(overall.getOverallId(), userId, todoItems.get(0).getTitle(), aiTodos);
+
         // 插入todo表
         for (TodoItem item : todoItems) {
             Todo todo = new Todo();
@@ -68,10 +136,24 @@ public class AiController {
             todo.setDescription(item.getTask());
             todo.setDayId(dayId);
             todo.setUserId(userId);
-            todoService.insert(todo.getDayId(),todo.getOverallId(), todo.getUserId(), todo.getTitle(), todo.getDescription());
+            todo.setCreatedAt(new Date()); // 设置创建时间
+
+            System.out.println("插入待办事项: " + todo);
+            todoService.insert(todo.getDayId(),todo.getOverallId(), todo.getUserId(), todo.getTitle(), todo.getDescription()); // 假设todoService有insert(Todo todo)方法
         }
-        log.info("AI为用户 {} 生成了新的待办事项", userId);
+
+        log.info("AI为用户 {} 生成了新的待办事项，共 {} 条", userId, todoItems.size());
         return true;
+    }
+
+    // 辅助方法：将Date转换为LocalDate
+    private LocalDate convertToLocalDate(Date date) {
+        if (date == null) {
+            return null;
+        }
+        return Instant.ofEpochMilli(date.getTime())
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate();
     }
 
     @RequestMapping("/aiSummary")
@@ -86,10 +168,16 @@ public class AiController {
             for(Todo todo : todos) {
                 if(todoss == null) {
                     todoss = List.of(todo);
-                } else {
-                    todoss.add(todo);
                 }
             }
+        }
+        if(todoss == null) {
+//      插入一个空的todoss
+            Todo todo = new Todo();
+            todo.setTitle("暂无待办事项");
+            todo.setDescription("暂无待办事项");
+            todo.setUserId(userId);
+            todoss = List.of(todo);
         }
         // 生成总结
         String aiSummary = toolService.aiSummary(overalls.toString(), todoss.toString(), String.valueOf(userId));

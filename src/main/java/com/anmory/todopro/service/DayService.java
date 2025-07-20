@@ -38,4 +38,8 @@ public class DayService {
     public com.anmory.todopro.model.Day selectLastByUserId(Integer userId) {
         return dayMapper.selectLastByUserId(userId);
     }
+
+    public com.anmory.todopro.model.Day selectLast() {
+        return dayMapper.selectLast();
+    }
 }

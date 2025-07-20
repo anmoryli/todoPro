@@ -83,4 +83,9 @@ public class DayController {
         }
         return dayService.selectLastByUserId(userId);
     }
+
+    @RequestMapping("/selectLastDay")
+    public Day selectLastDay() {
+        return dayService.selectLast();
+    }
 }

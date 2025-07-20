@@ -28,7 +28,11 @@ public interface TodoMapper {
             "WHERE todo_id = #{todoId} AND is_completed = FALSE")
     int complete(Integer todoId);
 
-    @Select("SELECT * FROM todo WHERE todo_id = #{todoId}")
+    @Update("UPDATE todo SET is_completed = FALSE, updated_at = NOW() " +
+            "WHERE todo_id = #{todoId} AND is_completed = TRUE")
+    int deCompleted(Integer todoId);
+
+    @Select("SELECT * FROM todo WHERE day_id = #{dayId}")
     List<Todo> selectByDayId(Integer dayId);
 
     @Select("SELECT * FROM todo WHERE overall_id = #{overallId}")
@@ -42,4 +46,8 @@ public interface TodoMapper {
 
     @Select("SELECT * FROM todo WHERE overall_id = #{overallId} and is_completed = false ORDER BY created_at DESC")
     List<Todo> selectNotCompletedByOverallId(Integer overallId);
+
+    @Select("SELECT * FROM todo WHERE day_id = #{dayId} AND user_id = #{userId} ORDER BY created_at DESC")
+    List<Todo> selectByDayIdAndUserId(Integer dayId, Integer userId);
+
 }

@@ -28,6 +28,10 @@ public interface OverallMapper {
             "WHERE overall_id = #{overallId} AND is_completed = FALSE")
     int complete(Integer overallId);
 
+    @Update("UPDATE overall SET is_completed = FALSE, updated_at = NOW() " +
+            "WHERE overall_id = #{overallId} AND is_completed = TRUE")
+    int deCompleted(Integer overallId);
+
     @Select("SELECT * FROM overall WHERE overall_id = #{overallId}")
     Overall selectById(Integer overallId);
 

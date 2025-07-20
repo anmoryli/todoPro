@@ -54,4 +54,12 @@ public class TodoService {
     public Todo selectNotCompletedByOverallId(Integer overallId) {
         return todoMapper.selectNotCompletedByOverallId(overallId).get(0);
     }
+
+    public int deCompleted(Integer todoId) {
+        return todoMapper.deCompleted(todoId);
+    }
+
+    public List<Todo> selectByDayIdAndUserId(Integer dayId, Integer userId) {
+        return todoMapper.selectByDayIdAndUserId(dayId, userId);
+    }
 }

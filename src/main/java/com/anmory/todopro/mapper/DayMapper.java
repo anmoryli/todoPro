@@ -32,4 +32,7 @@ public interface DayMapper {
 
     @Select("SELECT * FROM day WHERE user_id = #{userId} ORDER BY created_at DESC LIMIT 1")
     Day selectLastByUserId(Integer userId);
+
+    @Select("SELECT * FROM day ORDER BY created_at DESC LIMIT 1")
+    Day selectLast();
 }

@@ -9,6 +9,7 @@ import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -26,6 +27,9 @@ import java.util.regex.Pattern;
 @Slf4j
 @Service
 public class ToolService {
+    @Autowired
+    PromptService promptService;
+
     public int resolveUserId(HttpServletRequest request, Integer userIdn) {
         if (userIdn != null && userIdn > 0) {
             log.debug("使用userIdn参数获取用户ID：{}", userIdn);
@@ -52,13 +56,10 @@ public class ToolService {
                        String todos,
                        String overall,
                        @RequestParam String sessionId) {
-        String prompt = "你是一个todo生成助手，基于以下信息生成待办事项：\n" +
-                "待办事项列表：" + todos + "\n" +
-                "总体任务：" + overall + "\n" +
-                "请生成一个结构化的待办事项列表，不能有其他任何格式，不能有其他任何多余的标点，格式为：\n" +
-                "{待办标题1}[待办1],{待办标题2}[待办2],{待办标题2}[待办2],{待办标题3}[待办4]@\n" +
-                ",代表待办事项之间的分隔符,@代表结束,生成的待办数量在3~7个之间,由你自己决定。\n" +
-                "请注意，待办事项应简洁明了，能够准确描述任务内容。";
+        String prompt = promptService.selectById().getContent();
+        prompt += "{todos}和{overall}的内容是:" +
+                todos + "以及" + overall + "\n";
+        System.out.println("prompt:"+ prompt);
         var messageChatMemoryAdvisor = new MessageChatMemoryAdvisor(chatMemory,sessionId,100);
         ChatClient chatClient = ChatClient.builder(openAiChatModel)
                 .defaultSystem(prompt)
@@ -95,19 +96,20 @@ public class ToolService {
     public List<TodoItem> parseTodoList(String aiResponse) {
         List<TodoItem> result = new ArrayList<>();
 
-        // 处理@符号（如果存在），确保它不会干扰解析
+        // 移除@符号及其后的所有内容，并去除首尾空格
         String cleanedResponse = aiResponse.replaceAll("@.*$", "").trim();
 
-        // 定义正则表达式模式以匹配 "{待办标题}[待办事项]" 格式
-        Pattern pattern = Pattern.compile("\\{([^}]+)\\}\\[([^\\]]+)\\]");
+        // 定义新的正则表达式模式，匹配 "(标题)[任务]" 格式
+        Pattern pattern = Pattern.compile("\\(([^)]+)\\)\\[([^\\]]+)\\]");
         Matcher matcher = pattern.matcher(cleanedResponse);
 
         while (matcher.find()) {
-            String title = matcher.group(1).trim();
-            String task = matcher.group(2).trim();
-
+            String title = matcher.group(1).trim();  // 提取括号内的标题部分
+            String task = matcher.group(2).trim();   // 提取方括号内的任务部分
             result.add(new TodoItem(title, task));
         }
+
+        System.out.println(result);  // 打印解析结果（可根据需要移除）
         return result;
     }
 }

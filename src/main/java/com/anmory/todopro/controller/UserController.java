@@ -1,12 +1,20 @@
 package com.anmory.todopro.controller;
 
 import com.anmory.todopro.model.User;
+import com.anmory.todopro.service.ToolService;
 import com.anmory.todopro.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 /**
  * @author Anmory
@@ -20,6 +28,48 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
     @Autowired
     UserService userService;
+    @Autowired
+    ToolService toolService;
+
+    @RequestMapping("/uploadSelfWallPaper")
+    public int uploadSelfWallPaper(Integer userIdn,
+                                      @RequestParam(required = false) MultipartFile file,
+                                      HttpServletRequest request) throws IOException {
+        int userId = toolService.resolveUserId(request, userIdn);
+        String imgPath = null;  // 默认为null（无图片）
+
+        // 关键：先判断file是否为null，再判断是否为空
+        if (file != null && !file.isEmpty()) {  // 只有文件存在且非空时才处理
+            String fileName = file.getOriginalFilename();
+            // 注意添加路径分隔符，避免文件名拼接错误
+            String filePath = "/usr/local/nginx/images/todoPro/" + fileName;
+            imgPath = filePath;
+
+            File dir = new File("/usr/local/nginx/images/todoPro/");
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            try (FileOutputStream fos = new FileOutputStream(filePath)) {
+                fos.write(file.getBytes());
+                log.info("文件上传成功：{}", filePath);
+            } catch (IOException e) {
+                log.error("文件写入失败：{}", e.getMessage());
+                return -1;
+            }
+        } else {
+            log.info("未上传文件或文件为空，跳过文件处理");  // 空文件时直接跳过
+        }
+
+        int ret = userService.updateWallPaper(userId, imgPath);
+        if (ret > 0) {
+            log.info("用户 {} 的壁纸更新成功，路径：{}", userId, imgPath);
+            return ret;
+        } else {
+            log.error("用户 {} 的壁纸更新失败", userId);
+            return -1;
+        }
+    }
 
     @RequestMapping("/login")
     public User login(String username, String password, HttpSession session) {

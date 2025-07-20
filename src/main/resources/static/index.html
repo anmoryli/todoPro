@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>明日清单 - 智能待办管理</title>
+    <link rel="icon" href="icon.png" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- 加载动画 -->
+    <div id="loading" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h2>明日清单</h2>
+            <p>正在为您准备...</p>
+        </div>
+    </div>
+
+    <!-- 登录注册页面 -->
+    <div id="auth-page" class="page active">
+        <div class="auth-container">
+            <div class="auth-brand">
+                <div class="brand-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <h1>明日清单</h1>
+                <p class="brand-subtitle">智能待办管理，让规划变得简单</p>
+            </div>
+            
+            <div class="auth-card">
+                <!-- 登录表单 -->
+                <div id="login-form" class="auth-form active">
+                    <h2>登录您的账户</h2>
+                    <form>
+                        <div class="input-field">
+                            <input type="text" id="login-username" required>
+                            <label for="login-username">用户名</label>
+                            <div class="input-line"></div>
+                        </div>
+                        <div class="input-field">
+                            <input type="password" id="login-password" required>
+                            <label for="login-password">密码</label>
+                            <div class="input-line"></div>
+                        </div>
+                        <button type="submit" class="btn-primary">
+                            <span>登录</span>
+                            <div class="btn-ripple"></div>
+                        </button>
+                    </form>
+                    <p class="auth-switch">还没有账号？<a href="#" onclick="switchToRegister()">立即注册</a></p>
+                </div>
+
+                <!-- 注册表单 -->
+                <div id="register-form" class="auth-form">
+                    <h2>创建新账户</h2>
+                    <form>
+                        <div class="input-field">
+                            <input type="text" id="register-username" required>
+                            <label for="register-username">用户名</label>
+                            <div class="input-line"></div>
+                        </div>
+                        <div class="input-field">
+                            <input type="email" id="register-email" required>
+                            <label for="register-email">邮箱地址</label>
+                            <div class="input-line"></div>
+                        </div>
+                        <div class="input-field">
+                            <input type="password" id="register-password" required>
+                            <label for="register-password">密码</label>
+                            <div class="input-line"></div>
+                        </div>
+                        <button type="submit" class="btn-primary">
+                            <span>注册</span>
+                            <div class="btn-ripple"></div>
+                        </button>
+                    </form>
+                    <p class="auth-switch">已有账号？<a href="#" onclick="switchToLogin()">立即登录</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主应用页面 -->
+    <div id="main-app" class="page">
+        <!-- 顶部导航栏 -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <!-- 移动端菜单按钮 -->
+                    <button id="mobile-menu-btn" class="mobile-menu-btn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="app-logo">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>明日清单</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button id="theme-toggle" class="icon-btn" title="切换主题">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <div class="user-menu">
+                        <button class="user-avatar" id="user-menu-btn">
+                            <span id="user-initial">U</span>
+                        </button>
+                        <div class="user-dropdown" id="user-dropdown">
+                            <div class="user-info">
+                                <div class="user-name" id="user-name">用户</div>
+                                <div class="user-email" id="user-email">user@example.com</div>
+                            </div>
+                            <button class="dropdown-item" id="wallpaper-btn">
+                                <i class="fas fa-image"></i>
+                                <span>设置壁纸</span>
+                            </button>
+                            <div class="dropdown-divider"></div>
+                            <button class="dropdown-item" id="logout-btn">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>退出登录</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 移动端导航遮罩 -->
+        <div id="mobile-nav-overlay" class="mobile-nav-overlay"></div>
+
+        <!-- 侧边导航 -->
+        <nav class="app-nav" id="app-nav">
+            <div class="nav-content">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <i class="fas fa-home"></i>
+                    <span>概览</span>
+                </a>
+                <a href="#" class="nav-item" data-page="overall-tasks">
+                    <i class="fas fa-tasks"></i>
+                    <span>阶段任务</span>
+                </a>
+                <a href="#" class="nav-item" data-page="daily-summary">
+                    <i class="fas fa-book-open"></i>
+                    <span>每日总结</span>
+                </a>
+                <a href="#" class="nav-item" data-page="ai-assistant">
+                    <i class="fas fa-robot"></i>
+                    <span>AI助手</span>
+                </a>
+            </div>
+        </nav>
+
+        <!-- 主内容区域 -->
+        <main class="app-main">
+            <!-- 概览页面 -->
+            <section id="dashboard" class="content-section active">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h1>概览</h1>
+                        <p id="current-date">今天是美好的一天</p>
+                    </div>
+                </div>
+
+                <!-- 统计卡片 -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-content">
+                            <div class="stat-number" id="total-tasks">0</div>
+                            <div class="stat-label">阶段任务</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-content">
+                            <div class="stat-number" id="completed-tasks">0</div>
+                            <div class="stat-label">已完成</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-content">
+                            <div class="stat-number" id="pending-todos">0</div>
+                            <div class="stat-label">待办事项</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-content">
+                            <div class="stat-number" id="today-todos">0</div>
+                            <div class="stat-label">今日待办</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 内容区域 -->
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3>最近的任务</h3>
+                        </div>
+                        <div class="card-content">
+                            <div id="recent-tasks-list" class="task-list">
+                                <!-- 动态加载 -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card today-todos-card">
+                        <div class="card-header">
+                            <h3>今日待办</h3>
+                        </div>
+                        <div class="card-content">
+                            <div id="today-todos-list" class="todo-list">
+                                <!-- 动态加载 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 阶段任务页面 -->
+            <section id="overall-tasks" class="content-section">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h1>阶段任务</h1>
+                        <p>规划您的阶段性目标，AI将自动为您生成每日清单</p>
+                    </div>
+                    <button id="add-overall-btn" class="btn-primary">
+                        <i class="fas fa-plus"></i>
+                        <span>新建任务</span>
+                    </button>
+                </div>
+
+                <!-- 友好提示 -->
+                <div class="help-banner">
+                    <div class="help-icon">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <div class="help-content">
+                        <h4>使用提示</h4>
+                        <p>您需要做的仅仅只是规划一个阶段性任务，便可以全流程自动生成每日清单。AI会根据您的任务目标，智能分解为可执行的每日待办事项。</p>
+                    </div>
+                </div>
+
+                <div class="tasks-container">
+                    <div id="overall-tasks-grid" class="tasks-grid">
+                        <!-- 动态加载任务卡片 -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- 每日总结页面 -->
+            <section id="daily-summary" class="content-section">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h1>每日总结</h1>
+                        <p>记录每天的收获与感悟(记得每天都写哦~)</p>
+                    </div>
+                    <button id="add-summary-btn" class="btn-primary">
+                        <i class="fas fa-plus"></i>
+                        <span>写总结</span>
+                    </button>
+                </div>
+
+                <div class="summary-container">
+                    <div id="summary-list" class="summary-list">
+                        <!-- 动态加载总结 -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- AI助手页面 -->
+            <section id="ai-assistant" class="content-section">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h1>AI助手</h1>
+                        <p>智能分析您的任务进度，生成个性化建议</p>
+                    </div>
+                </div>
+
+                <!-- AI功能卡片 -->
+                <div class="ai-features">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-magic"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h3>生成明日待办</h3>
+                            <p>基于您的阶段任务和历史进度，智能生成明天的待办清单</p>
+                            <button id="generate-todos-btn" class="btn-secondary">
+                                <span>立即生成</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h3>生成总结报告</h3>
+                            <p>分析您的任务完成情况，生成详细的进度报告和建议</p>
+                            <button id="generate-summary-btn" class="btn-secondary">
+                                <span>生成报告</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI待办审核区域 -->
+                <div id="ai-review-section" class="ai-review-section" style="display: none;">
+                    <div class="review-header">
+                        <h3><i class="fas fa-clipboard-check"></i> AI待办审核</h3>
+                        <p>请审核并编辑AI为您生成的待办事项</p>
+                    </div>
+                    <div id="ai-todos-review" class="ai-todos-review">
+                        <!-- 动态加载待审核的待办事项 -->
+                    </div>
+                    <div class="review-actions">
+                        <button id="regenerate-todos-btn" class="btn-secondary">
+                            <i class="fas fa-redo"></i>
+                            <span>重新生成</span>
+                        </button>
+                        <button id="confirm-todos-btn" class="btn-primary">
+                            <i class="fas fa-check"></i>
+                            <span>确认应用</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- AI总结历史 -->
+                <div class="ai-history">
+                    <h2>AI总结历史</h2>
+                    <div id="ai-summaries-list" class="ai-summaries">
+                        <!-- AI总结列表 -->
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 任务详情模态框 -->
+    <div id="task-detail-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2 id="task-detail-title">任务详情</h2>
+                <button class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="task-detail-content">
+                    <div class="task-image-container">
+                        <img id="task-image" src="./icon.png" alt="任务图片" class="task-detail-image">
+                    </div>
+                    <div class="task-description">
+                        <h4>任务描述</h4>
+                        <p id="task-description-text"></p>
+                    </div>
+                    <div class="task-todos">
+                        <h4>相关待办事项</h4>
+                        <div id="task-todos-list" class="todo-list">
+                            <!-- 待办事项列表 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑任务模态框 -->
+    <div id="task-form-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2 id="task-form-title">新建任务</h2>
+                <button class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="task-form">
+                    <div class="form-field">
+                        <label for="task-name">任务名称</label>
+                        <input type="text" id="task-name" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="task-desc">任务描述</label>
+                        <textarea id="task-desc" rows="4" placeholder="详细描述您的阶段性目标..."></textarea>
+                    </div>
+                    <div class="form-field">
+                        <label for="task-image-upload">任务图片（可选）</label>
+                        <div class="file-upload">
+                            <input type="file" id="task-image-upload" accept="image/*">
+                            <div class="file-upload-area">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <p>点击选择图片或拖拽到此处</p>
+                                <small>支持 JPG、PNG、GIF 格式</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="closeModal('task-form-modal')">取消</button>
+                        <button type="submit" class="btn-primary">
+                            <span>保存任务</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑总结模态框 -->
+    <div id="summary-form-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2 id="summary-form-title">写总结</h2>
+                <button class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="summary-form">
+                    <div class="form-field">
+                        <label for="summary-title">总结标题</label>
+                        <input type="text" id="summary-title" required placeholder="今天的收获...">
+                    </div>
+                    <div class="form-field">
+                        <label for="summary-content">总结内容</label>
+                        <textarea id="summary-content" rows="8" placeholder="记录今天的收获、感悟和明天的计划..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="closeModal('summary-form-modal')">取消</button>
+                        <button type="submit" class="btn-primary">
+                            <span>保存总结</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 壁纸设置模态框 -->
+    <div id="wallpaper-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2>设置个人壁纸</h2>
+                <button class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="wallpaper-preview">
+                    <div class="preview-container">
+                        <div class="preview-background" id="wallpaper-preview">
+                            <div class="preview-overlay"></div>
+                            <div class="preview-content">
+                                <h3>预览效果</h3>
+                                <p>这是您的壁纸预览</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            
+                <form id="wallpaper-form">
+                    <div class="form-field">
+                        <label for="wallpaper-upload">选择壁纸图片</label>
+                        <div class="file-upload">
+                            <input type="file" id="wallpaper-upload" accept="image/*">
+                            <div class="file-upload-area">
+                                <i class="fas fa-image"></i>
+                                <p>点击选择壁纸图片或拖拽到此处</p>
+                                <small>支持 JPG、PNG、GIF 格式，建议尺寸 1920x1080</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="wallpaper-actions">
+                        <button type="button" id="remove-wallpaper-btn" class="btn-secondary">
+                            <i class="fas fa-trash"></i>
+                            <span>移除壁纸</span>
+                        </button>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="closeModal('wallpaper-modal')">取消</button>
+                        <button type="submit" class="btn-primary">
+                            <span>应用壁纸</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 通知容器 -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="./jquery.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

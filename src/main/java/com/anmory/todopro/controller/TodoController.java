@@ -60,13 +60,23 @@ public class TodoController {
         return todoService.complete(todoId);
     }
 
+    @RequestMapping("/deCompleted")
+    public int deCompleted(Integer todoId) {
+        if (todoId == null || todoId <= 0) {
+            log.error("无效的待办事项ID");
+            return -1;
+        }
+        return todoService.deCompleted(todoId);
+    }
+
     @RequestMapping("/selectByDayId")
-    public List<Todo> selectByDayId(Integer dayId) {
+    public List<Todo> selectByDayId(Integer dayId,Integer userIdn, HttpServletRequest request) {
+        int userId = toolService.resolveUserId(request, userIdn);
         if (dayId == null || dayId <= 0) {
             log.error("无效的日记ID");
             return null;
         }
-        return todoService.selectByDayId(dayId);
+        return todoService.selectByDayIdAndUserId(dayId, userId);
     }
 
     @RequestMapping("/selectByOverallId")

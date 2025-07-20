@@ -34,4 +34,8 @@ public class UserService {
     public com.anmory.todopro.model.User selectByUsernameAndPassword(String username, String password) {
         return userMapper.selectByUsernameAndPassword(username, password);
     }
+
+    public int updateWallPaper(int userId, String wallPaperPath) {
+        return userMapper.updateWallPaper(userId, wallPaperPath);
+    }
 }

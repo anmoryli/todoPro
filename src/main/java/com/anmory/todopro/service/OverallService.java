@@ -46,4 +46,8 @@ public class OverallService {
     public java.util.List<com.anmory.todopro.model.Overall> selectLastTenOverallsByUserId(Integer userId) throws Exception {
         return overallMapper.selectLastTenOverallsByUserId(userId);
     }
+
+    public int deCompleted(Integer overallId) {
+        return overallMapper.deCompleted(overallId);
+    }
 }

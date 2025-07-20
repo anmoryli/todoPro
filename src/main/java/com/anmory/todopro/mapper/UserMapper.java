@@ -27,4 +27,8 @@ public interface UserMapper {
 
     @Select("SELECT * FROM user WHERE username = #{username} AND password = #{password}")
     User selectByUsernameAndPassword(String username, String password);
+
+    @Update("UPDATE user SET wall_paper_path = #{wallPaperPath}, updated_at = NOW() " +
+            "WHERE user_id = #{userId}")
+    int updateWallPaper(int userId, String wallPaperPath);
 }
