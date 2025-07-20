@@ -6,9 +6,14 @@ import com.anmory.todopro.service.ToolService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -27,14 +32,55 @@ public class DayController {
     ToolService toolService;
 
     @RequestMapping("/insert")
-    public int insert(Integer userIdn, String title, String overview,
-                      HttpServletRequest request) {
+    public int insert(Integer userIdn, String title, String overview, HttpServletRequest request) {
         int userId = toolService.resolveUserId(request, userIdn);
         if (title == null || overview == null) {
-            log.error("标题或概述不能为空");
+            log.error("标题或概述不能为空，用户ID: {}", userId);
             return -1;
         }
-        return dayService.insert(userId, title, overview);
+
+        LocalDate currentDate = LocalDate.now();
+        Integer dayId = null;
+
+        try {
+            // 1. 先查询当前用户当天是否已有记录（按用户隔离）
+            Day todayDay = dayService.selectByUserIdAndDate(userId, currentDate);
+
+            if (todayDay != null) {
+                // 2. 存在当天记录，直接使用
+                dayId = todayDay.getDayId();
+                log.info("用户 {} 当天已有总结记录，使用ID: {}", userId, dayId);
+                // 可选：如果需要更新标题/概述，添加更新逻辑
+                // dayService.updateOverview(dayId, title, overview);
+            } else {
+                // 3. 不存在则创建新记录（借助数据库唯一约束防止并发重复）
+                int insertRow = dayService.insert(userId, title, overview);
+                if (insertRow <= 0) {
+                    log.error("用户 {} 创建当天总结失败", userId);
+                    return -1;
+                }
+                // 4. 按用户ID查询刚创建的记录（确保获取当前用户的记录）
+                Day newDay = dayService.selectByUserIdAndDate(userId, currentDate);
+                if (newDay == null) {
+                    log.error("用户 {} 创建后未查询到当天记录", userId);
+                    return -1;
+                }
+                dayId = newDay.getDayId();
+                log.info("用户 {} 新建当天总结记录，ID: {}", userId, dayId);
+            }
+
+            // 5. 此处原逻辑的insert2可能是冗余操作，按实际需求保留（建议删除或明确用途）
+            return dayId; // 返回有效dayId更合理
+
+        } catch (DuplicateKeyException e) {
+            // 捕获并发插入导致的唯一约束冲突（多用户同时创建时）
+            log.warn("用户 {} 当天总结已存在（并发冲突），直接使用现有记录", userId);
+            Day existDay = dayService.selectByUserIdAndDate(userId, currentDate);
+            return existDay != null ? existDay.getDayId() : -1;
+        } catch (Exception e) {
+            log.error("用户 {} 总结插入失败", userId, e);
+            return -1;
+        }
     }
 
     @RequestMapping("/delete")

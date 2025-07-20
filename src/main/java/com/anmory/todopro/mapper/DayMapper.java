@@ -3,6 +3,7 @@ package com.anmory.todopro.mapper;
 import com.anmory.todopro.model.Day;
 import org.apache.ibatis.annotations.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -35,4 +36,14 @@ public interface DayMapper {
 
     @Select("SELECT * FROM day ORDER BY created_at DESC LIMIT 1")
     Day selectLast();
+
+    @Insert("INSERT INTO day (user_id, title, overview, created_at, updated_at) " +
+            "VALUES (#{userId}, #{title}, #{overview}, NOW(), NOW())")
+    int insert2(int userId, String title, String overview);
+
+    @Delete("DELETE FROM day WHERE day_id = #{dayId} and user_id = #{userId}")
+    int delete2(Integer dayId, Integer userId);
+
+    @Select("SELECT * FROM day WHERE user_id = #{userId} AND DATE(created_at) = #{date}")
+    Day selectByUserIdAndDate(int userId, LocalDate date);
 }

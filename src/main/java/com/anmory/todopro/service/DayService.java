@@ -1,6 +1,7 @@
 package com.anmory.todopro.service;
 
 import com.anmory.todopro.mapper.DayMapper;
+import com.anmory.todopro.model.Day;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -41,5 +42,13 @@ public class DayService {
 
     public com.anmory.todopro.model.Day selectLast() {
         return dayMapper.selectLast();
+    }
+
+    public int insert2(int userId, String title, String overview) {
+        return dayMapper.insert2(userId, title, overview);
+    }
+
+    public Day selectByUserIdAndDate(int userId, java.time.LocalDate date) {
+        return dayMapper.selectByUserIdAndDate(userId, date);
     }
 }
